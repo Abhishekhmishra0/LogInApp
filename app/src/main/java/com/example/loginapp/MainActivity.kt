@@ -22,10 +22,11 @@ class MainActivity : AppCompatActivity() {
         btn.setOnClickListener{
             var intent = Intent(this,RegisterActivity::class.java)
             startActivity(intent)
+            finish()
         }
         val emailEditText = findViewById<EditText>(R.id.Email)
         val passwordEditText = findViewById<EditText>(R.id.Password)
-        val loginButton = findViewById<Button>(R.id.Login) // Make sure the ID is correct
+        val loginButton = findViewById<Button>(R.id.Login)
 
         loginButton.setOnClickListener {
             if (checking(emailEditText, passwordEditText)) {
@@ -36,7 +37,9 @@ class MainActivity : AppCompatActivity() {
                     task->
                     if(task.isSuccessful){
                         var intent = Intent(this,LoggedIn::class.java)
+                        intent.putExtra("email",email)
                         startActivity(intent)
+                        finish()
                     }
                     else{
                         Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show()

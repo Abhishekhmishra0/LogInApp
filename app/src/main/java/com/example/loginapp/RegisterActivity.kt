@@ -10,10 +10,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class RegisterActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
-    private lateinit var btn: Button // Use lateinit for late initialization
+    private lateinit var btn: Button
+    private lateinit var db: FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,7 +23,7 @@ class RegisterActivity : AppCompatActivity() {
         setContentView(R.layout.activity_register)
 
         auth = FirebaseAuth.getInstance()
-
+        db = FirebaseFirestore.getInstance()
         // Initialize the button after setContentView
         btn = findViewById(R.id.continue_button)
 
@@ -31,15 +33,36 @@ class RegisterActivity : AppCompatActivity() {
                 val password = findViewById<EditText>(R.id.password_input).text.toString()
                 val name = findViewById<EditText>(R.id.name_input).text.toString()
                 val phone = findViewById<EditText>(R.id.number_input).text.toString()
-
-                auth.createUserWithEmailAndPassword(email, password)
-                    .addOnCompleteListener(this) { task ->
-                        if (task.isSuccessful) {
-                            Toast.makeText(this, "Registered Successfully", Toast.LENGTH_LONG).show()
-                            var intent = Intent(this,MainActivity::class.java)
+                val user = hashMapOf(
+                    "Name" to name,
+                    "Phone" to phone,
+                    "email" to email
+                )
+                val users = db.collection("USERS")
+                val query = users.whereEqualTo("email",email).get()
+                    .addOnSuccessListener {
+                        tasks->
+                        if(tasks.isEmpty)
+                        {
+                            auth.createUserWithEmailAndPassword(email,password)
+                                .addOnCompleteListener(this){
+                                    task->
+                                    if(task.isSuccessful){
+                                        users.document(email).set(user)
+                                        val intent = Intent(this,LoggedIn::class.java)
+                                        startActivity(intent)
+                                        intent.putExtra("email",email)
+                                        finish()
+                                    }
+                                    else{
+                                        Toast.makeText(this,"Authentication Failed",Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                        }
+                        else{
+                            Toast.makeText(this,"User Already Registered",Toast.LENGTH_LONG).show()
+                            val intent = Intent(this, MainActivity::class.java)
                             startActivity(intent)
-                        } else {
-                            Toast.makeText(this, "Registration Failed", Toast.LENGTH_LONG).show()
                         }
                     }
             } else {
